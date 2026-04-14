@@ -15,4 +15,6 @@ public:
 	bool hasProvCycle();
 	bool hasCustomCycle();
 	void printGraph();
+	void computeRoutes(int distance);
+	void printPaths(int distance);
 };

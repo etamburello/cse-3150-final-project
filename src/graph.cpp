@@ -112,11 +112,11 @@ void Graph::computeRoutes(int dist) {
 	que.push(destination);
 
 	while (!que.empty()) {
-		AS* curr = que.front()
-		que.pop()
+		AS* curr = que.front();
+		que.pop();
 
 		//customers
-		for (const AS* c : curr->customers) {
+		for (AS* c : curr->customers) {
 			if (c->distance == INT_MAX) {
 				c->distance = curr->distance + 1;
 				c->parent = curr;
@@ -127,7 +127,7 @@ void Graph::computeRoutes(int dist) {
 
 		//peers
 		if (curr->relation != -1) {
-			for (const AS* p : curr->peers) {
+			for (AS* p : curr->peers) {
 				if (p->distance == INT_MAX) {
 					p->distance = curr->distance + 1;
 					p->parent = curr;
@@ -138,8 +138,8 @@ void Graph::computeRoutes(int dist) {
 		}
 
 		//providers
-		if (curr->relatiin != 1) {
-			for (const AS* pr : curr->providers) {
+		if (curr->relation == 1) {
+			for (AS* pr : curr->providers) {
 				if (pr->distance == INT_MAX) {
 					pr->distance = curr->distance + 1;
 					pr->parent = curr;
@@ -162,7 +162,7 @@ void Graph::printPaths(int dist) {
 
 		AS* curr = sec;
 		while (curr != nullptr) {
-			std::cout << cur->asn;
+			std::cout << curr->asn;
 			if (curr->parent) {
 				std::cout << " -> ";
 			}

@@ -16,6 +16,11 @@ int main(){
 	}
 
 	std::cout << "Graph built successfully!" << std::endl;
-	g.printGraph();
+
+	int d = 13335;
+	g.computeRoutes(d);
+	std::cout << "Routing paths to: " << d << std::endl;
+	g.printPaths(d);
+
 	return 0;
 }
