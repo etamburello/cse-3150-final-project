@@ -1,4 +1,8 @@
 #include <iostream>
-#include "AS.h"
+#include <memory>
+#include "AS.hpp"
+#include "bgp.hpp"
 
-AS::AS (int id) : asn(id), distance(INT_MAX), parent(nullptr), relation(0) {}
+AS::AS (int id) : asn(id) {
+    p = std::make_unique<BGP>();
+}

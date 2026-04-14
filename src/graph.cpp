@@ -1,173 +1,175 @@
+#include <cstddef>
 #include <iostream>
-#include <vector>
-#include <unordered_map>
-#include <unordered_set>
-#include <climits>
 #include <queue>
-#include "graph.h"
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <queue>
+#include <unordered_map>
+#include <algorithm>
+#include "graph.hpp"
+#include "AS.hpp"
 
-Graph::~Graph() {
-	for (auto& pair : nodes) {
-		delete pair.second;
+std::shared_ptr<AS> Graph::make(int asn) {
+	if (!map.count(asn)) {
+        map[asn] = std::make_shared<AS>(asn);
+    }
+    return map[asn];
+}
+
+void Graph::loadFile(const std::string& filename) {
+	std::ifstream file(filename);
+	if (!file) {
+		std::cerr << "Cannot open file\n";
+	}
+	std::string line;
+
+	while(std::getline(file, line)) {
+			if (line.empty() || line[0] == '#') {
+				continue;
+			}
+
+			std::stringstream iss(line);
+			int a, b, rel;
+			iss >> a >> b >> rel;
+
+			auto first = make(a);
+			auto second = make(b);
+
+			if (rel == -1) {
+				first->customers.push_back(second.get());
+				second->providers.push_back(first.get());
+			}
+			else if (rel == 0) {
+				first->peers.push_back(second.get());
+				second->peers.push_back(first.get());
+			}
+			else {
+				first->providers.push_back(second.get());
+				second->customers.push_back(first.get());
+			}
 	}
 }
 
-AS* Graph::makeNode(int asn){
-	if (nodes.find(asn) == nodes.end()){
-		nodes[asn] = new AS(asn);
-	}
-	return nodes[asn];
-}
-
-void Graph::addProvCustom(int provider, int customer){
-	AS* prov = makeNode(provider);
-	AS* custom = makeNode(customer);
-	prov->customers.push_back(custom);
-	custom->providers.push_back(prov);
-}
-
-void Graph::addPeerRelation(int p1, int p2){
-	AS* one = makeNode(p1);
-	AS* two = makeNode(p2);
-	one->peers.push_back(two);
-	two->peers.push_back(one);
-}
-
-bool Graph::hasCycles(AS* node, std::unordered_set<int>& visited, std::unordered_set<int>& r_stack, bool checkProv){
-	if (r_stack.count(node->asn)){
+bool Graph::dfsCycle(AS* node, std::unordered_map<int,int>& visited) {
+	if (visited[node->asn] == 1) {
 		return true;
 	}
-	if (visited.count(node->asn)){
+	if (visited[node->asn] == 2) {
 		return false;
 	}
 
-	visited.insert(node->asn);
-	r_stack.insert(node->asn);
-	const std::vector<AS*>& neighborhood = checkProv ? node->providers : node->customers;
-
-	for (AS* neighbor : neighborhood){
-		if (hasCycles(neighbor, visited, r_stack, checkProv)){
-			return true;
-		}
-	}
-
-	r_stack.erase(node->asn);
+	visited[node->asn] = 2;
 	return false;
 }
 
-bool Graph::hasProvCycle(){
-	std::unordered_set<int> visited, r_stack;
-	for (auto& pair : nodes){
-		if (hasCycles(pair.second, visited, r_stack, true)){
-			return true;
-		}
-	}
-	return false;
-}
+void Graph::detectCycles() {
+	std::unordered_map<int, int> visited;
 
-bool Graph::hasCustomCycle(){
-	std::unordered_set<int> visited, r_stack;
-	for (auto& pair : nodes){
-		if (hasCycles(pair.second, visited, r_stack, false)){
-			return true;
+	for (auto& [n, aptr] : map) {
+		if (dfsCycle(aptr.get(), visited)) {
+			std::cerr << "Cycle detected!\n";
+			exit(1);
 		}
-	}
-	return false;
-}
-
-void Graph::printGraph(){
-	for (const auto& pair : nodes) {
-		AS* node = pair.second;
-		std::cout << "AS: " << node->asn << std::endl;
-
-		std::cout << "Providers: ";
-		for (const auto p : node->providers) {
-			std::cout << p->asn << " ";
-		}
-
-		std::cout << "Customers: ";
-		for (const auto c : node->customers) {
-			std::cout << c->asn << " ";
-		}
-
-		std::cout << "Peers: ";
-		for (const auto p : node->peers) {
-			std::cout << p->asn << " ";
-		}
-		std::cout << "\n\n";
 	}
 }
 
-void Graph::computeRoutes(int dist) {
-	for (auto& pair : nodes) {
-		pair.second->distance = INT_MAX;
-		pair.second->parent = nullptr;
-		pair.second->relation = 0;
-	}
-	AS* destination = makeNode(dist);
+void Graph::assignRanks() {
 	std::queue<AS*> que;
 
-	destination->distance = 0;
-	destination->relation = 1;
-	que.push(destination);
+	for (auto& [n, aptr] : map) {
+		if (aptr->customers.empty()) {
+			aptr->rank = 0;
+			que.push(aptr.get());
+		}
+	}
 
-	while (!que.empty()) {
+	while(!que.empty()) {
 		AS* curr = que.front();
-		que.pop();
-
-		//customers
-		for (AS* c : curr->customers) {
-			if (c->distance == INT_MAX) {
-				c->distance = curr->distance + 1;
-				c->parent = curr;
-				c->relation = 1;
-				que.push(c);
-			}
-		}
-
-		//peers
-		if (curr->relation != -1) {
-			for (AS* p : curr->peers) {
-				if (p->distance == INT_MAX) {
-					p->distance = curr->distance + 1;
-					p->parent = curr;
-					p->relation = 0;
-					que.push(p);
-				}
-			}
-		}
-
-		//providers
-		if (curr->relation == 1) {
-			for (AS* pr : curr->providers) {
-				if (pr->distance == INT_MAX) {
-					pr->distance = curr->distance + 1;
-					pr->parent = curr;
-					pr->relation = -1;
-					que.push(pr);
-				}
+		for (auto p : curr->providers) {
+			if (p->rank < curr->rank + 1) {
+				p->rank = curr->rank + 1;
+				que.push(p);
 			}
 		}
 	}
+
+	int max_rank = 0;
+	for (auto& [n, aptr] : map) {
+		max_rank = std::max(max_rank, aptr->rank);
+	}
+
+	ranks.clear();
+	ranks.resize(max_rank + 1);
+	for (auto& [n, aptr] : map) {
+		ranks[aptr->rank].push_back(aptr.get());
+	}
 }
 
-void Graph::printPaths(int dist) {
-	for (const auto& pair : nodes) {
-		AS* sec = pair.second;
-		if (sec->distance == INT_MAX) {
-			continue;
-		}
+void Graph::seedAnnoucement(int asn, const std::string& prefix) {
+	Annoucement a;
+	a.prefix = prefix;
+	a.path = {asn};
+	a.next = asn;
+	a.relation = Relationship::ORIGIN;
 
-		std::cout << "AS: " << sec->asn << " -> ";
+	auto an = map[asn];
+	an->p->receive(a);
+	an->p->process(asn);
+}
 
-		AS* curr = sec;
-		while (curr != nullptr) {
-			std::cout << curr->asn;
-			if (curr->parent) {
-				std::cout << " -> ";
+void Graph::propagate() {
+	//up
+	for (size_t a = 0; a < ranks.size(); a++) {
+		for (auto r : ranks[a]) {
+			for (auto& [prefex, ann] : r->p->getRib()) {
+				for (auto prov : r->providers) {
+					Annoucement new_annouce = ann;
+					new_annouce.next = r->asn;
+					new_annouce.relation = Relationship::CUSTOMER;
+					prov->p->receive(new_annouce);
+				}
 			}
-			curr = curr->parent;
 		}
-		std::cout << "\n";
+
+		for (auto r : ranks[a]) {
+			r->p->process(r->asn);
+		}
+	}
+
+	//across
+	for (auto& [n, aptr] : map) {
+		for (auto& [prefex, ann] : aptr->p->getRib()) {
+			for (auto peer : aptr->peers) {
+				Annoucement new_annouce = ann;
+				new_annouce.next = aptr->asn;
+				new_annouce.relation = Relationship::PEER;
+				peer->p->receive(new_annouce);
+			}
+
+		}
+	}
+
+	//process
+	for (auto& [n, aptr] : map) {
+		aptr->p->process(aptr->asn);
+	}
+
+	//down
+	for (int a = (int)ranks.size() -1; a >= 0; a--) {
+		for (auto r : ranks[a]) {
+			for (auto& [prefex, ann] : r->p->getRib()) {
+				for (auto custom : r->customers) {
+					Annoucement new_annouce = ann;
+					new_annouce.next = r->asn;
+					new_annouce.relation = Relationship::PROVIDER;
+					custom->p->receive(new_annouce);
+				}
+			}
+		}
+
+		for (auto r : ranks[a]) {
+			r->p->process(r->asn);
+		}
 	}
 }

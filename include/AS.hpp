@@ -1,15 +1,19 @@
 #pragma once
+#include "bgp.hpp"
+#include "policy.hpp"
+#include <memory>
 #include <vector>
-#include <climits>
 
 class AS {
 public:
 	int asn;
+
 	std::vector<AS*> providers;
 	std::vector<AS*> customers;
 	std::vector<AS*> peers;
-	int distance;
-	AS* parent;
-	int relation;
+
+	std::unique_ptr<Policy> p;
+	int rank = -1;
+
 	AS (int id);
 };
