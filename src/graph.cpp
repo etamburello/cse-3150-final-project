@@ -2,6 +2,8 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <climits>
+#include <queue>
 #include "graph.h"
 
 Graph::~Graph() {
@@ -96,3 +98,76 @@ void Graph::printGraph(){
 	}
 }
 
+void Graph::computeRoutes(int dist) {
+	for (auto& pair : nodes) {
+		pair.second->distance = INT_MAX;
+		pair.second->parent = nullptr;
+		pair.second->relation = 0;
+	}
+	AS* destination = makeNode(dist);
+	std::queue<AS*> que;
+
+	destination->distance = 0;
+	destination->relation = 1;
+	que.push(destination);
+
+	while (!que.empty()) {
+		AS* curr = que.front()
+		que.pop()
+
+		//customers
+		for (const AS* c : curr->customers) {
+			if (c->distance == INT_MAX) {
+				c->distance = curr->distance + 1;
+				c->parent = curr;
+				c->relation = 1;
+				que.push(c);
+			}
+		}
+
+		//peers
+		if (curr->relation != -1) {
+			for (const AS* p : curr->peers) {
+				if (p->distance == INT_MAX) {
+					p->distance = curr->distance + 1;
+					p->parent = curr;
+					p->relation = 0;
+					que.push(p);
+				}
+			}
+		}
+
+		//providers
+		if (curr->relatiin != 1) {
+			for (const AS* pr : curr->providers) {
+				if (pr->distance == INT_MAX) {
+					pr->distance = curr->distance + 1;
+					pr->parent = curr;
+					pr->relation = -1;
+					que.push(pr);
+				}
+			}
+		}
+	}
+}
+
+void Graph::printPaths(int dist) {
+	for (const auto& pair : nodes) {
+		AS* sec = pair.second;
+		if (sec->distance == INT_MAX) {
+			continue;
+		}
+
+		std::cout << "AS: " << sec->asn << " -> ";
+
+		AS* curr = sec;
+		while (curr != nullptr) {
+			std::cout << cur->asn;
+			if (curr->parent) {
+				std::cout << " -> ";
+			}
+			curr = curr->parent;
+		}
+		std::cout << "\n";
+	}
+}
