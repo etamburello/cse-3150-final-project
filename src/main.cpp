@@ -14,15 +14,14 @@ int main(){
 	cout << "Assigning proper ranks..." << endl;
 	g.assignRanks();
 
-	cout << "Loading ROV..." << endl;
-	g.loadROV("bench/subprefix/rov_asns.csv");
-
 	cout << "Loading announcements..." << endl;
 	g.loadAnnouncement("bench/subprefix/anns.csv");
 
 	cout << "Propagating..." << endl;
-	g.processAll();
 	g.propagate();
+
+	cout << "Loading ROV..." << endl;
+	g.loadROV("bench/subprefix/rov_asns.csv");
 
 	g.writeCSV("output.csv");
 	cout << "Simulation successful, wrote to output.csv!" << endl;

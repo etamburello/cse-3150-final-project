@@ -3,8 +3,12 @@
 #include "rov.hpp"
 
 void ROV::receive(const Announcement& a) {
-    if (a.rov_invalid) {
-        return; //drop announcement
-    }
-    BGP::receive(a);
+	if (a.relation == Relationship::ORIGIN) {
+		BGP::receive(a);
+		return;
+	}
+    	if (a.rov_invalid) {
+        	return; //drop announcement
+    	}
+    	BGP::receive(a);
 }

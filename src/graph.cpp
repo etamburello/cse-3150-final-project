@@ -127,23 +127,27 @@ void Graph::loadAnnouncement(const std::string& filename) {
 	std::getline(file, line);
 	while(std::getline(file, line)) {
 		if (line.empty()) continue;
+		std::cout << "READ LINE: " << line << std::endl;
 
 		std::stringstream iss(line);
-		std::string asn_str, prefix;
+		std::string asn_str, prefix, rov_str;
 
 		std::getline(iss, asn_str, ',');
         	std::getline(iss, prefix, ',');
+		std::getline(iss, rov_str, ',');
 		int asn = std::stoi(asn_str);
 
 		if (!map.count(asn)) continue;
 
-		auto node = map[asn];
+		std::transform(rov_str.begin(), rov_str.end(), rov_str.begin(), ::tolower);
+
+		auto node = make(asn);
 		Announcement a;
 		a.prefix = prefix;
 		a.path = {asn};
 		a.next = asn;
 		a.relation = Relationship::ORIGIN;
-		a.rov_invalid = false;
+		a.rov_invalid = (rov_str == "true");
 		node->p->receive(a);
 		node->p->process(asn);
 	}
@@ -159,6 +163,7 @@ void Graph::propagate() {
                         Announcement new_a = ann;
                         new_a.next = r->asn;
                         new_a.relation = Relationship::CUSTOMER;
+			new_a.path.insert(new_a.path.begin(), r->asn);
                         prov->p->receive(new_a);
                     }
                 }
@@ -177,6 +182,7 @@ void Graph::propagate() {
                     Announcement new_a = ann;
                     new_a.next = aptr->asn;
                     new_a.relation = Relationship::PEER;
+		    new_a.path.insert(new_a.path.begin(), aptr->asn);
                     peer->p->receive(new_a);
                 }
             }
@@ -196,6 +202,7 @@ void Graph::propagate() {
                     Announcement new_a = ann;
                     new_a.next = r->asn;
                     new_a.relation = Relationship::PROVIDER;
+		    new_a.path.insert(new_a.path.begin(), r->asn);
                     cust->p->receive(new_a);
                 }
             }

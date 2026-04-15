@@ -38,15 +38,18 @@ void BGP::receive(const Announcement& a) {
 
 void BGP::process(int curr_asn) {
 		for (auto& [prefix, ann] : rec_queue) {
+			std::cout << "Processing AS " << curr_asn << " queue size: " << rec_queue.size() << std::endl;
 			if (ann.empty()) continue;
 			bool found = false;
 			Announcement best;
 			for (auto& a : ann) {
 				bool loop = false;
-				for (int p : a.path) {
-					if(p == curr_asn) {
-						loop = true;
-						break;
+				if (a.relation != Relationship::ORIGIN) {
+					for (int p : a.path) {
+						if(p == curr_asn) {
+							loop = true;
+							break;
+						}
 					}
 				}
 				if(loop) continue;
@@ -63,6 +66,7 @@ void BGP::process(int curr_asn) {
 			if (!local_rib.count(prefix) || better(cand, local_rib[prefix])) {
 				local_rib[prefix] = cand;
 			}
+			std::cout << "Installed route at AS " << curr_asn << " for prefix " << prefix << std::endl;
 		}
 		rec_queue.clear();
 }
