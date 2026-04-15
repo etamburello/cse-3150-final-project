@@ -14,4 +14,5 @@ struct Announcement {
         std::vector<int> path;
         int next;
         Relationship relation;
+        bool rov_invalid = false;
 };

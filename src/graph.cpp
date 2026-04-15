@@ -9,6 +9,7 @@
 #include <algorithm>
 #include "graph.hpp"
 #include "AS.hpp"
+#include "rov.hpp"
 
 std::shared_ptr<AS> Graph::make(int asn) {
 	if (!map.count(asn)) {
@@ -115,6 +116,7 @@ void Graph::seedAnnouncement(int asn, const std::string& prefix) {
 	a.path = {asn};
 	a.next = asn;
 	a.relation = Relationship::ORIGIN;
+	a.rov_invalid = false;
 
 	if (!map.count(asn)) {
 		std::cerr << "ASN not found\n";
@@ -179,4 +181,12 @@ void Graph::propagate() {
 			r->p->process(r->asn);
 		}
 	}
+}
+
+void Graph::setROV(int asn) {
+	if (!map.count(asn)) {
+		return;
+	}
+
+    map[asn]->p = std::make_unique<ROV>();
 }

@@ -21,4 +21,6 @@ public:
 
 	void seedAnnouncement(int asn, const std::string& prefix);
 	void propagate();
+
+	void setROV(int asn);
 };	
