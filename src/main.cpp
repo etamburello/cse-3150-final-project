@@ -14,8 +14,12 @@ int main(){
 	cout << "Assigning proper ranks..." << endl;
 	g.assignRanks();
 
+	cout << "Testing rov..." << endl;
+	g.setROV(123); //test values
+	g.setROV(456);
+
 	cout << "Seeding announcement..." << endl;
-	g.seedAnnouncement(1, "1.2.0.0/16"); //test value
+	g.seedAnnouncement(15169, "8.8.8.0/24"); //test value
 
 	cout << "Propagating..." << endl;
 	g.propagate();
