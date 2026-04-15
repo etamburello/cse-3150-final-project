@@ -21,6 +21,7 @@ void Graph::loadFile(const std::string& filename) {
 	std::ifstream file(filename);
 	if (!file) {
 		std::cerr << "Cannot open file\n";
+		return;
 	}
 	std::string line;
 
@@ -56,8 +57,10 @@ bool Graph::dfsCycle(AS* node, std::unordered_map<int,int>& visited) {
 	}
 	visited[node->asn] = 1;
 	for(auto prov : node->providers) {
-		if (dfsCycle(prov, visited)) {
-			return true;
+		if (visited[p->asn] != 2) {
+			if (dfsCycle(prov, visited)) {
+				return true;
+			}
 		}
 	}
 

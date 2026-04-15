@@ -38,15 +38,15 @@ void BGP::receive(const Announcement& a) {
 
 void BGP::process(int curr_asn) {
 		for (auto& [prefix, ann] : rec_queue) {
-				Announcement best = ann[0];
-				for (auto& a : ann) {
-					if (better(a, best)) {
-							best = a;
-					}
+			if (ann.empty()) continue;
+			Announcement best = ann[0];
+			for (auto& a : ann) {
+				if (better(a, best)) {
+						best = a;
 				}
-
-				best.path.insert(best.path.begin(), curr_asn);
-				local_rib[prefix] = best;
+			}
+			best.path.insert(best.path.begin(), curr_asn);
+			local_rib[prefix] = best;
 		}
 		rec_queue.clear();
 }
