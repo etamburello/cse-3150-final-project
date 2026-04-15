@@ -9,7 +9,7 @@ enum class Relationship {
         PEER
 };
 
-struct Annoucement {
+struct Announcement {
         std::string prefix;
         std::vector<int> path;
         int next;

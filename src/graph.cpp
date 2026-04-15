@@ -44,10 +44,6 @@ void Graph::loadFile(const std::string& filename) {
 				first->peers.push_back(second.get());
 				second->peers.push_back(first.get());
 			}
-			else {
-				first->providers.push_back(second.get());
-				second->customers.push_back(first.get());
-			}
 	}
 }
 
@@ -57,6 +53,12 @@ bool Graph::dfsCycle(AS* node, std::unordered_map<int,int>& visited) {
 	}
 	if (visited[node->asn] == 2) {
 		return false;
+	}
+	visited[node->asn] = 1;
+	for(auto prov : node->providers) {
+		if (dfsCycle(prov, visited)) {
+			return true;
+		}
 	}
 
 	visited[node->asn] = 2;
@@ -86,6 +88,7 @@ void Graph::assignRanks() {
 
 	while(!que.empty()) {
 		AS* curr = que.front();
+		que.pop();
 		for (auto p : curr->providers) {
 			if (p->rank < curr->rank + 1) {
 				p->rank = curr->rank + 1;
@@ -106,13 +109,17 @@ void Graph::assignRanks() {
 	}
 }
 
-void Graph::seedAnnoucement(int asn, const std::string& prefix) {
-	Annoucement a;
+void Graph::seedAnnouncement(int asn, const std::string& prefix) {
+	Announcement a;
 	a.prefix = prefix;
 	a.path = {asn};
 	a.next = asn;
 	a.relation = Relationship::ORIGIN;
 
+	if (!map.count(asn)) {
+		std::cerr << "ASN not found\n";
+		return;
+	}
 	auto an = map[asn];
 	an->p->receive(a);
 	an->p->process(asn);
@@ -122,12 +129,12 @@ void Graph::propagate() {
 	//up
 	for (size_t a = 0; a < ranks.size(); a++) {
 		for (auto r : ranks[a]) {
-			for (auto& [prefex, ann] : r->p->getRib()) {
+			for (auto& [prefix, ann] : r->p->getRib()) {
 				for (auto prov : r->providers) {
-					Annoucement new_annouce = ann;
-					new_annouce.next = r->asn;
-					new_annouce.relation = Relationship::CUSTOMER;
-					prov->p->receive(new_annouce);
+					Announcement new_announce = ann;
+					new_announce.next = r->asn;
+					new_announce.relation = Relationship::CUSTOMER;
+					prov->p->receive(new_announce);
 				}
 			}
 		}
@@ -139,12 +146,12 @@ void Graph::propagate() {
 
 	//across
 	for (auto& [n, aptr] : map) {
-		for (auto& [prefex, ann] : aptr->p->getRib()) {
+		for (auto& [prefix, ann] : aptr->p->getRib()) {
 			for (auto peer : aptr->peers) {
-				Annoucement new_annouce = ann;
-				new_annouce.next = aptr->asn;
-				new_annouce.relation = Relationship::PEER;
-				peer->p->receive(new_annouce);
+				Announcement new_announce = ann;
+				new_announce.next = aptr->asn;
+				new_announce.relation = Relationship::PEER;
+				peer->p->receive(new_announce);
 			}
 
 		}
@@ -158,12 +165,12 @@ void Graph::propagate() {
 	//down
 	for (int a = (int)ranks.size() -1; a >= 0; a--) {
 		for (auto r : ranks[a]) {
-			for (auto& [prefex, ann] : r->p->getRib()) {
+			for (auto& [prefix, ann] : r->p->getRib()) {
 				for (auto custom : r->customers) {
-					Annoucement new_annouce = ann;
-					new_annouce.next = r->asn;
-					new_annouce.relation = Relationship::PROVIDER;
-					custom->p->receive(new_annouce);
+					Announcement new_announce = ann;
+					new_announce.next = r->asn;
+					new_announce.relation = Relationship::PROVIDER;
+					custom->p->receive(new_announce);
 				}
 			}
 		}

@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../include/graph.hpp"
+#include "graph.hpp"
 
 using std::cout, std::endl;
 
@@ -14,8 +14,8 @@ int main(){
 	cout << "Assigning proper ranks..." << endl;
 	g.assignRanks();
 
-	cout << "Seeding annoucement..." << endl;
-	g.seedAnnoucement(1, "1.2.0.0/16"); //test value
+	cout << "Seeding announcement..." << endl;
+	g.seedAnnouncement(1, "1.2.0.0/16"); //test value
 
 	cout << "Propagating..." << endl;
 	g.propagate();

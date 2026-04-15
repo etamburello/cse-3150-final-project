@@ -1,5 +1,4 @@
 #pragma once
-#include "bgp.hpp"
 #include "policy.hpp"
 #include <memory>
 #include <vector>

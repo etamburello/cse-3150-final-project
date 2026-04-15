@@ -1,5 +1,5 @@
 #pragma once
-#include "annoucement.hpp"
+#include "announcement.hpp"
 #include "policy.hpp"
 #include <unordered_map>
 
@@ -8,10 +8,10 @@ private:
     std::unordered_map<std::string, Annoucement> local_rib;
     std::unordered_map<std::string, std::vector<Annoucement>> rec_queue;
 
-    bool better(const Annoucement& a, const Annoucement& b);
+    bool better(const Announcement& a, const Announcement& b);
 
 public:
-    void receive(const Annoucement& a) override;
+    void receive(const Announcement& a) override;
     void process(int curr_asn) override;
-    const std::unordered_map<std::string, Annoucement>& getRib() const override;
+    const std::unordered_map<std::string, Announcement>& getRib() const override;
 };

@@ -9,7 +9,7 @@
 class Graph {
 private:
 	std::unordered_map<int, std::shared_ptr<AS>> map;
-	bool dfsCycle(AS* node, std::unordered_map<int, int>& visted);
+	bool dfsCycle(AS* node, std::unordered_map<int, int>& visited);
 
 public:
 	std::vector<std::vector<AS*>> ranks;
@@ -19,6 +19,6 @@ public:
 	void detectCycles();
 	void assignRanks();
 
-	void seedAnnoucement(int asn, const std::string& prefix);
+	void seedAnnouncement(int asn, const std::string& prefix);
 	void propagate();
 };	
