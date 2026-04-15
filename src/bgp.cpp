@@ -44,9 +44,16 @@ void BGP::process(int curr_asn) {
 			Announcement best;
 			bool found = false;
 			for (auto& a : ann) {
-				if(std::find(a.path.begin(), a.path.end(), curr_asn) != a.path.end()) {
-        				continue;
-    				}
+				if(a.relation != Relationship::ORIGIN) {
+					bool loop = false;
+					for (size_t in = 1; in < a.path.size(); in++) {
+    						if (a.path[in] == curr_asn) {
+        						loop = true;
+        						break;
+    						}
+					}
+					if (loop) continue;
+				}
 
     				if(!found) {
         				best = a;
@@ -60,7 +67,9 @@ void BGP::process(int curr_asn) {
 			}
 			if(!found) continue;
 
-			best.path.insert(best.path.begin(), curr_asn);
+			if(best.path.empty() || best.path[0] != curr_asn) {
+				best.path.insert(best.path.begin(), curr_asn);
+			}
 			local_rib[prefix] = best;
 			//debuging
 			std::cout << "Installed route at AS " << curr_asn << " for prefix " << prefix << std::endl;

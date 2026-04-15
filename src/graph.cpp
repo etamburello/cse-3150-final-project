@@ -136,9 +136,6 @@ void Graph::loadAnnouncement(const std::string& filename) {
         	std::getline(iss, prefix, ',');
 		std::getline(iss, rov_str, ',');
 		int asn = std::stoi(asn_str);
-
-		if (!map.count(asn)) continue;
-
 		std::transform(rov_str.begin(), rov_str.end(), rov_str.begin(), ::tolower);
 
 		auto node = make(asn);
@@ -156,29 +153,33 @@ void Graph::loadAnnouncement(const std::string& filename) {
 void Graph::propagate() {
 	//up(to providers)
 	for (size_t a = 0; a < ranks.size(); a++) {
-        for (auto r : ranks[a]) {
-    		for (auto& [prefix, ann] : r->p->getRib()) {
-                if (ann.relation == Relationship::CUSTOMER || ann.relation == Relationship::ORIGIN) {
-                    for (auto prov : r->providers) {
-                        Announcement new_a = ann;
-                        new_a.next = r->asn;
-                        new_a.relation = Relationship::CUSTOMER;
-			new_a.path.insert(new_a.path.begin(), r->asn);
-                        prov->p->receive(new_a);
-                    }
-                }
-            }
-        }
-        for (auto r : ranks[a]) {
-            r->p->process(r->asn);
-        }
-    }
+		for(auto r : ranks[a]) {
+    			r->p->process(r->asn);
+		}
+        	for(auto r : ranks[a]) {
+    			for(auto& [prefix, ann] : r->p->getRib()) {
+                		if(ann.relation == Relationship::CUSTOMER || ann.relation == Relationship::ORIGIN) {
+                    			for(auto prov : r->providers) {
+                        			Announcement new_a = ann;
+                        			new_a.next = r->asn;
+                        			new_a.relation = Relationship::CUSTOMER;
+						new_a.path.insert(new_a.path.begin(), r->asn);
+                        			prov->p->receive(new_a);
+                    			}
+                		}
+            		}
+        	}
+       	}
 
     //across(to peers)
-    for (auto& [n, aptr] : map) {
-        for (auto& [prefix, ann] : aptr->p->getRib()) {
-            if (ann.relation == Relationship::CUSTOMER || ann.relation == Relationship::ORIGIN) {
-                for (auto peer : aptr->peers) {
+    for(auto& [n, aptr] : map) {
+    	aptr->p->process(aptr->asn);
+	}
+
+    for(auto& [n, aptr] : map) {
+        for(auto& [prefix, ann] : aptr->p->getRib()) {
+            if(ann.relation == Relationship::CUSTOMER || ann.relation == Relationship::ORIGIN) {
+                for(auto peer : aptr->peers) {
                     Announcement new_a = ann;
                     new_a.next = aptr->asn;
                     new_a.relation = Relationship::PEER;
@@ -251,6 +252,9 @@ void Graph::writeCSV(const std::string& filename) {
                 		if (a != ann.path.size() - 1) {
                     			out << ", ";
                 		}
+				else {
+					out << ",";
+				}
             		}
             		out << ")\"\n";
         	}
