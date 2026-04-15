@@ -20,7 +20,7 @@ std::shared_ptr<AS> Graph::make(int asn) {
 void Graph::loadFile(const std::string& filename) {
 	std::ifstream file(filename);
 	if (!file) {
-		std::cerr << "Cannot open file\n";
+		std::cerr << "Cannot open CAIDA file\n";
 		return;
 	}
 	std::string line;
@@ -45,6 +45,10 @@ void Graph::loadFile(const std::string& filename) {
 				first->peers.push_back(second.get());
 				second->peers.push_back(first.get());
 			}
+			else {
+				first->providers.push_back(second.get());
+    				second->customers.push_back(first.get());
+			}
 	}
 }
 
@@ -57,7 +61,7 @@ bool Graph::dfsCycle(AS* node, std::unordered_map<int,int>& visited) {
 	}
 	visited[node->asn] = 1;
 	for(auto prov : node->providers) {
-		if (visited[p->asn] != 2) {
+		if (visited[prov->asn] != 2) {
 			if (dfsCycle(prov, visited)) {
 				return true;
 			}
@@ -112,77 +116,106 @@ void Graph::assignRanks() {
 	}
 }
 
-void Graph::seedAnnouncement(int asn, const std::string& prefix) {
-	Announcement a;
-	a.prefix = prefix;
-	a.path = {asn};
-	a.next = asn;
-	a.relation = Relationship::ORIGIN;
-	a.rov_invalid = false;
-
-	if (!map.count(asn)) {
-		std::cerr << "ASN not found\n";
-		return;
+void Graph::loadAnnouncement(const std::string& filename) {
+	std::ifstream file(filename);
+    	if (!file) {
+        	std::cerr << "Cannot open announcements file\n";
+        	return;
 	}
-	auto an = map[asn];
-	an->p->receive(a);
-	an->p->process(asn);
+
+	std::string line;
+	std::getline(file, line);
+	while(std::getline(file, line)) {
+		if (line.empty()) continue;
+
+		std::stringstream iss(line);
+		std::string asn_str, prefix, rov_str;
+
+		std::getline(iss, asn_str, ',');
+        	std::getline(iss, prefix, ',');
+        	std::getline(iss, rov_str, ',');
+		int asn = std::stoi(asn_str);
+        	bool rov_invalid = (rov_str == "true");
+
+		auto node = make(asn);
+
+		Announcement a;
+		a.prefix = prefix;
+		a.path = {asn};
+		a.next = asn;
+		a.relation = Relationship::ORIGIN;
+		a.rov_invalid = rov_invalid;
+		node->p->receive(a);
+		//node->p->process(asn);
+	}
 }
-
 void Graph::propagate() {
-	//up
-	for (size_t a = 0; a < ranks.size(); a++) {
-		for (auto r : ranks[a]) {
-			for (auto& [prefix, ann] : r->p->getRib()) {
-				for (auto prov : r->providers) {
-					Announcement new_announce = ann;
-					new_announce.next = r->asn;
-					new_announce.relation = Relationship::CUSTOMER;
-					prov->p->receive(new_announce);
-				}
-			}
-		}
+    bool changed = true;
 
-		for (auto r : ranks[a]) {
-			r->p->process(r->asn);
-		}
-	}
+    while (changed) {
+        changed = false;
 
-	//across
-	for (auto& [n, aptr] : map) {
-		for (auto& [prefix, ann] : aptr->p->getRib()) {
-			for (auto peer : aptr->peers) {
-				Announcement new_announce = ann;
-				new_announce.next = aptr->asn;
-				new_announce.relation = Relationship::PEER;
-				peer->p->receive(new_announce);
-			}
+        // up(to providers)
+        for (size_t a = 0; a < ranks.size(); a++) {
+            for (auto r : ranks[a]) {
+                for (auto& [prefix, ann] : r->p->getRib()) {
+                    if (ann.relation == Relationship::CUSTOMER ||
+                        ann.relation == Relationship::ORIGIN) {
 
-		}
-	}
+                        for (auto prov : r->providers) {
+                            Announcement new_a = ann;
+                            new_a.next = r->asn;
+                            new_a.relation = Relationship::CUSTOMER;
+                            prov->p->receive(new_a);
+                            changed = true;
+                        }
+                    }
+                }
+            }
+            for (auto r : ranks[a]) {
+                r->p->process(r->asn);
+            }
+        }
+
+        // across(to peers)
+        for (auto& [n, aptr] : map) {
+            for (auto& [prefix, ann] : aptr->p->getRib()) {
+                if (ann.relation == Relationship::CUSTOMER ||
+                    ann.relation == Relationship::ORIGIN) {
+                    for (auto peer : aptr->peers) {
+                        Announcement new_a = ann;
+                        new_a.next = aptr->asn;
+                        new_a.relation = Relationship::PEER;
+                        peer->p->receive(new_a);
+                        changed = true;
+                    }
+                }
+            }
+        }
 
 	//process
-	for (auto& [n, aptr] : map) {
-		aptr->p->process(aptr->asn);
-	}
+        for (auto& [n, aptr] : map) {
+            aptr->p->process(aptr->asn);
+        }
 
-	//down
-	for (int a = (int)ranks.size() -1; a >= 0; a--) {
-		for (auto r : ranks[a]) {
-			for (auto& [prefix, ann] : r->p->getRib()) {
-				for (auto custom : r->customers) {
-					Announcement new_announce = ann;
-					new_announce.next = r->asn;
-					new_announce.relation = Relationship::PROVIDER;
-					custom->p->receive(new_announce);
-				}
-			}
-		}
-
-		for (auto r : ranks[a]) {
-			r->p->process(r->asn);
-		}
-	}
+        //down(to customers)
+        for (int a = (int)ranks.size() - 1; a >= 0; a--) {
+            for (auto r : ranks[a]) {
+                for (auto& [prefix, ann] : r->p->getRib()) {
+                    for (auto cust : r->customers) {
+                        Announcement new_a = ann;
+                        new_a.next = r->asn;
+                        new_a.relation = Relationship::PROVIDER;
+                        cust->p->receive(new_a);
+                        changed = true;
+                    }
+                }
+            }
+            for (auto r : ranks[a]) {
+                r->p->process(r->asn);
+            }
+        }
+    }
 }
 
 void Graph::setROV(int asn) {
@@ -191,4 +224,40 @@ void Graph::setROV(int asn) {
 	}
 
     map[asn]->p = std::make_unique<ROV>();
+}
+
+void Graph::loadROV(const std::string& filename) {
+	std::ifstream file(filename);
+    	if (!file) {
+        	std::cerr << "Cannot open ROV file\n";
+        	return;
+    	}
+
+    	int asn;
+    	while (file >> asn) {
+        	setROV(asn);
+    	}
+}
+
+void Graph::writeCSV(const std::string& filename) {
+	std::ofstream out(filename);
+    	if (!out) {
+        	std::cerr << "Cannot open output file\n";
+        	return;
+    	}
+
+	for (auto& [asn, as_ptr] : map) {
+        	for (auto& [prefix, ann] : as_ptr->p->getRib()) {
+            		out << asn << "," << prefix << ",";
+			out << "\"(";
+            		for (size_t a = 0; a < ann.path.size(); a++) {
+                		out << ann.path[a];
+                		if (a != ann.path.size() - 1) {
+                    			out << ", ";
+                		}
+            		}
+			out << ")\"";
+			out << "\n";
+        	}
+    	}
 }

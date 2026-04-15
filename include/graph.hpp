@@ -18,9 +18,12 @@ public:
 	void loadFile(const std::string& filename);
 	void detectCycles();
 	void assignRanks();
-
-	void seedAnnouncement(int asn, const std::string& prefix);
+	void loadAnnouncement(const std::string& filename);
 	void propagate();
 
 	void setROV(int asn);
-};	
+	void loadROV(const std::string& filename);
+
+	void writeCSV(const std::string& filename);
+};
+

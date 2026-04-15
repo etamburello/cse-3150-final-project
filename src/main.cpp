@@ -14,17 +14,17 @@ int main(){
 	cout << "Assigning proper ranks..." << endl;
 	g.assignRanks();
 
-	cout << "Testing rov..." << endl;
-	g.setROV(123); //test values
-	g.setROV(456);
+	cout << "Loading ROV..." << endl;
+	g.loadROV("bench/subprefix/rov_asns.csv");
 
-	cout << "Seeding announcement..." << endl;
-	g.seedAnnouncement(15169, "8.8.8.0/24"); //test value
+	cout << "Loading announcements..." << endl;
+	g.loadAnnouncement("bench/subprefix/anns.csv");
 
 	cout << "Propagating..." << endl;
 	g.propagate();
 
-	cout << "Simulation successful!" << endl;
+	g.writeCSV("output.csv");
+	cout << "Simulation successful, wrote to output.csv!" << endl;
 
 	return 0;
 }

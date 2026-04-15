@@ -5,4 +5,3 @@
 - BGP class manages routing logic and uses a receive queue to store incoming announcements and a local RIB (localrib from the instructions) to store the best route per prefix
 - for propagating, the implementation of the three-phase propagation model (up, across, down) allows for the prevention of multi-hop propagation. the up and down phases to use the rank structure to ensure correct order, while the across phase sends to all peers first and then processes everything
 - ROV class extends BGP and overrides the receive() function to immediately drop invalid announcements (rovinvalid == true)
--

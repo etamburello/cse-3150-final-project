@@ -39,18 +39,34 @@ void BGP::receive(const Announcement& a) {
 void BGP::process(int curr_asn) {
 		for (auto& [prefix, ann] : rec_queue) {
 			if (ann.empty()) continue;
-			Announcement best = ann[0];
+			bool found = false;
+			Announcement best;
 			for (auto& a : ann) {
-				if (better(a, best)) {
-						best = a;
+				bool loop = false;
+				for (int p : a.path) {
+					if(p == curr_asn) {
+						loop = true;
+						break;
+					}
+				}
+				if(loop) continue;
+
+				if (!found || better(a, best)) {
+					best = a;
+					found = true;
 				}
 			}
-			best.path.insert(best.path.begin(), curr_asn);
-			local_rib[prefix] = best;
+			if (!found) continue;
+
+			Announcement cand = best;
+			cand.path.insert(cand.path.begin(), curr_asn);
+			if (!local_rib.count(prefix) || better(cand, local_rib[prefix])) {
+				local_rib[prefix] = cand;
+			}
 		}
 		rec_queue.clear();
 }
 
-const std::unordered_map<std::string, Announcement>& BGP:: getRib() const {
+const std::unordered_map<std::string, Announcement>& BGP::getRib() const {
 	return local_rib;
 }
