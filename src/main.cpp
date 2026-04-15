@@ -21,6 +21,7 @@ int main(){
 	g.loadAnnouncement("bench/subprefix/anns.csv");
 
 	cout << "Propagating..." << endl;
+	g.processAll();
 	g.propagate();
 
 	g.writeCSV("output.csv");
