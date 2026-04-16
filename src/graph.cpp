@@ -151,67 +151,78 @@ void Graph::loadAnnouncement(const std::string& filename) {
 }
 
 void Graph::propagate() {
-	//up(to providers)
-	for (size_t a = 0; a < ranks.size(); a++) {
-		for(auto r : ranks[a]) {
-    			r->p->process(r->asn);
+	bool changed = true;
+
+	while(changed) {
+		changed = false;
+		//up(to providers)
+		for (size_t a = 0; a < ranks.size(); a++) {
+			for(auto r : ranks[a]) {
+    			if(r->p->process(r->asn)) {
+					changed = true;
+				}
+			}
+        		for(auto r : ranks[a]) {
+    				for(auto& [prefix, ann] : r->p->getRib()) {
+                			if(ann.relation == Relationship::CUSTOMER || ann.relation == Relationship::ORIGIN) {
+                				for(auto prov : r->providers) {
+                    					Announcement new_a = ann;
+                    					new_a.next = r->asn;
+                    					new_a.relation = Relationship::CUSTOMER;
+							prov->p->receive(new_a);
+                    				}
+                			}
+            			}
+        		}
+       		}
+
+    		//across(to peers)
+    		for(auto& [n, aptr] : map) {
+    			if(aptr->p->process(aptr->asn)) {
+				changed = true;
+			}
 		}
-        	for(auto r : ranks[a]) {
-    			for(auto& [prefix, ann] : r->p->getRib()) {
-                		if(ann.relation == Relationship::CUSTOMER || ann.relation == Relationship::ORIGIN) {
-                    			for(auto prov : r->providers) {
-                        			Announcement new_a = ann;
-                        			new_a.next = r->asn;
-                        			new_a.relation = Relationship::CUSTOMER;
-						new_a.path.insert(new_a.path.begin(), r->asn);
-                        			prov->p->receive(new_a);
-                    			}
-                		}
-            		}
-        	}
-       	}
+    		for(auto& [n, aptr] : map) {
+        		for(auto& [prefix, ann] : aptr->p->getRib()) {
+            			if(ann.relation == Relationship::CUSTOMER || ann.relation == Relationship::ORIGIN) {
+                			for(auto peer : aptr->peers) {
+                    				Announcement new_a = ann;
+                    				new_a.next = aptr->asn;
+                    				new_a.relation = Relationship::PEER;
+                    				peer->p->receive(new_a);
+                			}
+            			}
+        		}
+    		}
 
-    //across(to peers)
-    for(auto& [n, aptr] : map) {
-    	aptr->p->process(aptr->asn);
+    		//down(to customers)
+    		for (int a = (int)ranks.size() - 1; a >= 0; a--) {
+        		for (auto r : ranks[a]) {
+            			for (auto& [prefix, ann] : r->p->getRib()) {
+                			for (auto cust : r->customers) {
+                 				Announcement new_a = ann;
+                    				new_a.next = r->asn;
+                    				new_a.relation = Relationship::PROVIDER;
+                    				cust->p->receive(new_a);
+                			}
+            			}
+        		}
+        		for (auto r : ranks[a]) {
+            			if(r->p->process(r->asn)) {
+					changed = true;
+				}
+        		}
+    		}
+		bool any = false;
+    		for (auto& [n, aptr] : map) {
+        		if (aptr->p->process(aptr->asn)) {
+            			any = true;
+        		}
+    		}
+    		if (any) {
+        		changed = true;
+    		}
 	}
-
-    for(auto& [n, aptr] : map) {
-        for(auto& [prefix, ann] : aptr->p->getRib()) {
-            if(ann.relation == Relationship::CUSTOMER || ann.relation == Relationship::ORIGIN) {
-                for(auto peer : aptr->peers) {
-                    Announcement new_a = ann;
-                    new_a.next = aptr->asn;
-                    new_a.relation = Relationship::PEER;
-		    new_a.path.insert(new_a.path.begin(), aptr->asn);
-                    peer->p->receive(new_a);
-                }
-            }
-        }
-    }
-
-	//process
-    for (auto& [n, aptr] : map) {
-        aptr->p->process(aptr->asn);
-    }
-
-    //down(to customers)
-    for (int a = (int)ranks.size() - 1; a >= 0; a--) {
-        for (auto r : ranks[a]) {
-            for (auto& [prefix, ann] : r->p->getRib()) {
-                for (auto cust : r->customers) {
-                    Announcement new_a = ann;
-                    new_a.next = r->asn;
-                    new_a.relation = Relationship::PROVIDER;
-		    new_a.path.insert(new_a.path.begin(), r->asn);
-                    cust->p->receive(new_a);
-                }
-            }
-        }
-        for (auto r : ranks[a]) {
-            r->p->process(r->asn);
-        }
-    }
 }
 
 void Graph::setROV(int asn) {
@@ -261,8 +272,3 @@ void Graph::writeCSV(const std::string& filename) {
     	}
 }
 
-void Graph::processAll() {
-    for (auto& [asn, as_ptr] : map) {
-        as_ptr->p->process(asn);
-    }
-}

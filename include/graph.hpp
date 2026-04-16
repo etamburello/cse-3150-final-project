@@ -19,7 +19,6 @@ public:
 	void detectCycles();
 	void assignRanks();
 	void loadAnnouncement(const std::string& filename);
-	void processAll();
 	void propagate();
 
 	void setROV(int asn);

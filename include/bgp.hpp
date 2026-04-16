@@ -12,6 +12,6 @@ private:
 
 public:
     void receive(const Announcement& a) override;
-    void process(int curr_asn) override;
+    bool process(int curr_asn) override;
     const std::unordered_map<std::string, Announcement>& getRib() const override;
 };

@@ -36,45 +36,44 @@ void BGP::receive(const Announcement& a) {
 	rec_queue[a.prefix].push_back(a);
 }
 
-void BGP::process(int curr_asn) {
-		for (auto& [prefix, ann] : rec_queue) {
-			//debuging
-			std::cout << "Processing AS " << curr_asn << " queue size: " << rec_queue.size() << std::endl;
-
-			Announcement best;
-			bool found = false;
-			for (auto& a : ann) {
-				if(a.relation != Relationship::ORIGIN) {
-					bool loop = false;
-					for (size_t in = 1; in < a.path.size(); in++) {
-    						if (a.path[in] == curr_asn) {
-        						loop = true;
-        						break;
-    						}
-					}
-					if (loop) continue;
-				}
-
-    				if(!found) {
-        				best = a;
-        				found = true;
-					continue;
-    				}
-
-				if(better(a, best)) {
-					best = a;
-				}
+bool BGP::process(int curr_asn) {
+	bool changed = false;
+	for (auto& [prefix, ann] : rec_queue) {
+		//debuging
+		std::cout << "Processing AS " << curr_asn << " queue size: " << rec_queue.size() << std::endl;
+		Announcement best;
+		bool found = false;
+		for (auto& a : ann) {
+			if(a.relation != Relationship::ORIGIN) {
+				if (std::find(a.path.begin(), a.path.end(), curr_asn) != a.path.end()) {
+                    			continue;
+                		}
 			}
-			if(!found) continue;
 
-			if(best.path.empty() || best.path[0] != curr_asn) {
-				best.path.insert(best.path.begin(), curr_asn);
+    			if(!found) {
+        			best = a;
+        			found = true;
+				continue;
+    			}
+
+			if(better(a, best)) {
+				best = a;
 			}
-			local_rib[prefix] = best;
-			//debuging
-			std::cout << "Installed route at AS " << curr_asn << " for prefix " << prefix << std::endl;
 		}
-		rec_queue.clear();
+		if(!found) continue;
+
+		if(best.path.empty() || best.path[0] != curr_asn) {
+			best.path.insert(best.path.begin(), curr_asn);
+		}
+		if (!local_rib.count(prefix) || local_rib[prefix].path != best.path) {
+            		local_rib[prefix] = best;
+            		changed = true;
+        	}
+		//debuging
+		std::cout << "Installed route at AS " << curr_asn << " for prefix " << prefix << std::endl;
+	}
+	rec_queue.clear();
+	return changed;
 }
 
 const std::unordered_map<std::string, Announcement>& BGP::getRib() const {
