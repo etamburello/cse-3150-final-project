@@ -16,7 +16,7 @@ public:
 
 	std::shared_ptr<AS> make(int asn);
 	void loadFile(const std::string& filename);
-	void detectCycles();
+	bool detectCycles();
 	void assignRanks();
 	void loadAnnouncement(const std::string& filename);
 	void propagate();

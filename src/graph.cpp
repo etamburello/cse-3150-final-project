@@ -72,15 +72,15 @@ bool Graph::dfsCycle(AS* node, std::unordered_map<int,int>& visited) {
 	return false;
 }
 
-void Graph::detectCycles() {
+bool Graph::detectCycles() {
 	std::unordered_map<int, int> visited;
 
 	for (auto& [n, aptr] : map) {
 		if (dfsCycle(aptr.get(), visited)) {
-			std::cerr << "Cycle detected!\n";
-			exit(1);
+			return true;
 		}
 	}
+	return false;
 }
 
 void Graph::assignRanks() {
@@ -127,8 +127,6 @@ void Graph::loadAnnouncement(const std::string& filename) {
 	std::getline(file, line);
 	while(std::getline(file, line)) {
 		if (line.empty()) continue;
-		std::cout << "READ LINE: " << line << std::endl;
-
 		std::stringstream iss(line);
 		std::string asn_str, prefix, rov_str;
 
@@ -151,78 +149,58 @@ void Graph::loadAnnouncement(const std::string& filename) {
 }
 
 void Graph::propagate() {
-	bool changed = true;
-
-	while(changed) {
-		changed = false;
-		//up(to providers)
-		for (size_t a = 0; a < ranks.size(); a++) {
-			for(auto r : ranks[a]) {
-    			if(r->p->process(r->asn)) {
-					changed = true;
-				}
-			}
-        		for(auto r : ranks[a]) {
-    				for(auto& [prefix, ann] : r->p->getRib()) {
-                			if(ann.relation == Relationship::CUSTOMER || ann.relation == Relationship::ORIGIN) {
-                				for(auto prov : r->providers) {
-                    					Announcement new_a = ann;
-                    					new_a.next = r->asn;
-                    					new_a.relation = Relationship::CUSTOMER;
-							prov->p->receive(new_a);
-                    				}
-                			}
-            			}
-        		}
-       		}
-
-    		//across(to peers)
-    		for(auto& [n, aptr] : map) {
-    			if(aptr->p->process(aptr->asn)) {
-				changed = true;
-			}
-		}
-    		for(auto& [n, aptr] : map) {
-        		for(auto& [prefix, ann] : aptr->p->getRib()) {
-            			if(ann.relation == Relationship::CUSTOMER || ann.relation == Relationship::ORIGIN) {
-                			for(auto peer : aptr->peers) {
+	//up(to providers)
+	for (size_t r = 0; r < ranks.size(); r++) {
+		for(auto as : ranks[r]) {
+			as->p->process(as->asn);
+    		}
+        	for(auto as : ranks[r]) {
+    			for(auto& [prefix, ann] : as->p->getRib()) {
+                		if(ann.relation == Relationship::CUSTOMER || ann.relation == Relationship::ORIGIN) {
+                			for(auto prov : as->providers) {
                     				Announcement new_a = ann;
-                    				new_a.next = aptr->asn;
-                    				new_a.relation = Relationship::PEER;
-                    				peer->p->receive(new_a);
-                			}
-            			}
-        		}
-    		}
+                   				new_a.next = as->asn;
+                    				new_a.relation = Relationship::CUSTOMER;
+						prov->p->receive(new_a);
+                    			}
+                		}
+            		}
+        	}
+       	}
 
-    		//down(to customers)
-    		for (int a = (int)ranks.size() - 1; a >= 0; a--) {
-        		for (auto r : ranks[a]) {
-            			for (auto& [prefix, ann] : r->p->getRib()) {
-                			for (auto cust : r->customers) {
-                 				Announcement new_a = ann;
-                    				new_a.next = r->asn;
-                    				new_a.relation = Relationship::PROVIDER;
-                    				cust->p->receive(new_a);
-                			}
-            			}
-        		}
-        		for (auto r : ranks[a]) {
-            			if(r->p->process(r->asn)) {
-					changed = true;
-				}
-        		}
-    		}
-		bool any = false;
-    		for (auto& [n, aptr] : map) {
-        		if (aptr->p->process(aptr->asn)) {
-            			any = true;
-        		}
-    		}
-    		if (any) {
-        		changed = true;
-    		}
+    	//across(to peers)
+    	for(auto& [n, aptr] : map) {
+        	for(auto& [prefix, ann] : aptr->p->getRib()) {
+            		if(ann.relation == Relationship::CUSTOMER || ann.relation == Relationship::ORIGIN) {
+               			for(auto peer : aptr->peers) {
+                  			Announcement new_a = ann;
+                    			new_a.next = aptr->asn;
+                    			new_a.relation = Relationship::PEER;
+                    			peer->p->receive(new_a);
+               			}
+           		}
+        	}
+    	}
+	for(auto& [n, aptr] : map) {
+		aptr->p->process(n);
 	}
+
+    	//down(to customers)
+    	for (int r = (int)ranks.size() - 1; r >= 0; r--) {
+       		for (auto as : ranks[r]) {
+          		for (auto& [prefix, ann] : as->p->getRib()) {
+                		for (auto cust : as->customers) {
+                 			Announcement new_a = ann;
+                    			new_a.next = as->asn;
+                    			new_a.relation = Relationship::PROVIDER;
+                    			cust->p->receive(new_a);
+                		}
+            		}
+        	}
+        	for (auto as : ranks[r]) {
+            		as->p->process(as->asn);
+       		}
+    	}
 }
 
 void Graph::setROV(int asn) {

@@ -39,8 +39,6 @@ void BGP::receive(const Announcement& a) {
 bool BGP::process(int curr_asn) {
 	bool changed = false;
 	for (auto& [prefix, ann] : rec_queue) {
-		//debuging
-		std::cout << "Processing AS " << curr_asn << " queue size: " << rec_queue.size() << std::endl;
 		Announcement best;
 		bool found = false;
 		for (auto& a : ann) {
@@ -68,9 +66,7 @@ bool BGP::process(int curr_asn) {
 		if (!local_rib.count(prefix) || local_rib[prefix].path != best.path) {
             		local_rib[prefix] = best;
             		changed = true;
-        	}
-		//debuging
-		std::cout << "Installed route at AS " << curr_asn << " for prefix " << prefix << std::endl;
+		}
 	}
 	rec_queue.clear();
 	return changed;
