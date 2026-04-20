@@ -33,6 +33,14 @@ bool BGP::better(const Announcement& a, const Announcement& b) {
 	return a.next < b.next;
 }
 
+static bool sameAnnouncement(const Announcement& a, const Announcement& b) {
+	return a.prefix == b.prefix
+		&& a.path == b.path
+		&& a.next == b.next
+		&& a.received_from_relationship == b.received_from_relationship
+		&& a.rov_invalid == b.rov_invalid;
+}
+
 void BGP::receive(const Announcement& a) {
 	rec_queue[a.prefix].push_back(a);
 }
@@ -42,6 +50,11 @@ bool BGP::process(int curr_asn) {
 	for (auto& [prefix, ann] : rec_queue) {
 		Announcement best{};
 		bool found = false;
+		auto existing = local_rib.find(prefix);
+		if (existing != local_rib.end()) {
+			best = existing->second;
+			found = true;
+		}
 		for (auto& a : ann) {
 			if(a.received_from_relationship != Relationship::ORIGIN) {
 				if (std::find(a.path.begin(), a.path.end(), curr_asn) != a.path.end()) {
@@ -64,9 +77,10 @@ bool BGP::process(int curr_asn) {
 		if(best.path.empty() || best.path[0] != curr_asn) {
 			best.path.insert(best.path.begin(), curr_asn);
 		}
-		if (!local_rib.count(prefix) || local_rib[prefix].path != best.path) {
-            		local_rib[prefix] = best;
-            		changed = true;
+		auto it = local_rib.find(prefix);
+		if (it == local_rib.end() || !sameAnnouncement(it->second, best)) {
+			local_rib[prefix] = best;
+			changed = true;
 		}
 	}
 	rec_queue.clear();

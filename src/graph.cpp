@@ -206,6 +206,9 @@ void Graph::propagate() {
 	std::cout << "before down: nodes=" << map.size() << std::endl;
     	//down(to customers)
     	for (int r = (int)ranks.size() - 1; r >= 0; r--) {
+        	for (auto as : ranks[r]) {
+            		as->p->process(as->asn);
+       		}
        		for (auto as : ranks[r]) {
           		for (auto& [prefix, ann] : as->p->getRib()) {
                 		for (auto cust : as->customers) {
@@ -216,9 +219,6 @@ void Graph::propagate() {
                 		}
             		}
         	}
-        	for (auto as : ranks[r]) {
-            		as->p->process(as->asn);
-       		}
     	}
 	std::cout << "after down: nodes=" << map.size() << std::endl;
 }
@@ -263,6 +263,9 @@ void Graph::writeCSV(const std::string& filename) {
                     			out << ", ";
                 		}
             		}
+			if (ann.path.size() == 1) {
+				out << ",";
+			}
             		out << ")\"\n";
         	}
     	}
