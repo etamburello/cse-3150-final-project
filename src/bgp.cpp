@@ -61,7 +61,6 @@ bool BGP::process(int curr_asn) {
                     			continue;
                 		}
 			}
-
     			if(!found) {
         			best = a;
         			found = true;
@@ -78,8 +77,11 @@ bool BGP::process(int curr_asn) {
 			best.path.insert(best.path.begin(), curr_asn);
 		}
 		auto it = local_rib.find(prefix);
-		if (it == local_rib.end() || !sameAnnouncement(it->second, best)) {
-			local_rib[prefix] = best;
+		if (it == local_rib.end()) {
+			local_rib.emplace(prefix, best);
+			changed = true;
+		} else if (!sameAnnouncement(it->second, best)) {
+			it->second = best;
 			changed = true;
 		}
 	}

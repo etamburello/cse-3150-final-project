@@ -11,10 +11,11 @@
 #include "rov.hpp"
 
 std::shared_ptr<AS> Graph::make(int asn) {
-	if (!map.count(asn)) {
-        map[asn] = std::make_shared<AS>(asn);
-    }
-    return map[asn];
+	auto it = map.find(asn);
+	if (it == map.end()) {
+		it = map.emplace(asn, std::make_shared<AS>(asn)).first;
+	}
+	return it->second;
 }
 
 void Graph::loadFile(const std::string& filename) {
