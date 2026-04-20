@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include <unordered_map>
 #include "bgp.hpp"
 #include "announcement.hpp"
@@ -39,7 +40,7 @@ void BGP::receive(const Announcement& a) {
 bool BGP::process(int curr_asn) {
 	bool changed = false;
 	for (auto& [prefix, ann] : rec_queue) {
-		Announcement best;
+		Announcement best{};
 		bool found = false;
 		for (auto& a : ann) {
 			if(a.received_from_relationship != Relationship::ORIGIN) {

@@ -31,8 +31,21 @@ void Graph::loadFile(const std::string& filename) {
 			}
 
 			std::stringstream iss(line);
+			std::string a_str, b_str, rel_str;
+			if (!std::getline(iss, a_str, '|') ||
+			    !std::getline(iss, b_str, '|') ||
+			    !std::getline(iss, rel_str, '|')) {
+				continue;
+			}
+
 			int a, b, rel;
-			iss >> a >> b >> rel;
+			try {
+				a = std::stoi(a_str);
+				b = std::stoi(b_str);
+				rel = std::stoi(rel_str);
+			} catch (const std::exception&) {
+				continue;
+			}
 
 			auto first = make(a);
 			auto second = make(b);
@@ -149,6 +162,7 @@ void Graph::seedAnnouncement(const std::string& filename) {
 }
 
 void Graph::propagate() {
+	std::cout << "before up: nodes=" << map.size() << std::endl;
 	//up(to providers)
 	for (size_t r = 0; r < ranks.size(); r++) {
 		for(auto as : ranks[r]) {
@@ -159,15 +173,18 @@ void Graph::propagate() {
                 		if(ann.received_from_relationship == Relationship::CUSTOMER || ann.received_from_relationship == Relationship::ORIGIN) {
                 			for(auto prov : as->providers) {
                     				Announcement new_a = ann;
-                   				new_a.next = as->asn;
+                   					new_a.next = as->asn;
                     				new_a.received_from_relationship = Relationship::CUSTOMER;
-						prov->p->receive(new_a);
+									prov->p->receive(new_a);
+									
                     			}
                 		}
             		}
         	}
        	}
+		std::cout << "after up: nodes=" << map.size() << std::endl;
 
+		std::cout << "before across: nodes=" << map.size() << std::endl;
     	//across(to peers)
     	for(auto& [n, aptr] : map) {
         	for(auto& [prefix, ann] : aptr->p->getRib()) {
@@ -184,7 +201,9 @@ void Graph::propagate() {
 	for(auto& [n, aptr] : map) {
 		aptr->p->process(n);
 	}
+	std::cout << "after across: nodes=" << map.size() << std::endl;
 
+	std::cout << "before down: nodes=" << map.size() << std::endl;
     	//down(to customers)
     	for (int r = (int)ranks.size() - 1; r >= 0; r--) {
        		for (auto as : ranks[r]) {
@@ -201,6 +220,7 @@ void Graph::propagate() {
             		as->p->process(as->asn);
        		}
     	}
+	std::cout << "after down: nodes=" << map.size() << std::endl;
 }
 
 void Graph::setROV(int asn) {
@@ -225,6 +245,7 @@ void Graph::loadROV(const std::string& filename) {
 }
 
 void Graph::writeCSV(const std::string& filename) {
+
 	std::ofstream out(filename);
     	if (!out) {
         	std::cerr << "Cannot open output file\n";

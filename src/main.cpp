@@ -12,10 +12,10 @@ int main(){
 	g.detectCycles();
 
 	cout << "Loading ROV..." << endl;
-	g.loadROV("bench/subprefix/rov_asns.csv");
+	g.loadROV("bench/prefix/rov_asns.csv");
 
 	cout << "Loading announcements..." << endl;
-	g.seedAnnouncement("bench/subprefix/anns.csv");
+	g.seedAnnouncement("bench/prefix/anns.csv");
 
 	cout << "Assigning proper ranks..." << endl;
 	g.assignRanks();
