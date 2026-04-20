@@ -15,7 +15,7 @@ int main(){
 	g.loadROV("bench/subprefix/rov_asns.csv");
 
 	cout << "Loading announcements..." << endl;
-	g.loadAnnouncement("bench/subprefix/anns.csv");
+	g.seedAnnouncement("bench/subprefix/anns.csv");
 
 	cout << "Assigning proper ranks..." << endl;
 	g.assignRanks();

@@ -54,7 +54,7 @@ inline void test_path_correctness() {
     ann.prefix = "1.2.0.0/16";
     ann.path = {3};
     ann.next = 3;
-    ann.relation = Relationship::ORIGIN;
+    ann.received_from_relationship = Relationship::ORIGIN;
 
     c->p->receive(ann);
     c->p->process(3);
@@ -135,7 +135,7 @@ inline void test_announcement_seed() {
     ann.prefix = "1.2.0.0/16";
     ann.path = {1};
     ann.next = 1;
-    ann.relation = Relationship::ORIGIN;
+    ann.received_from_relationship = Relationship::ORIGIN;
 
     a->p->receive(ann);
     a->p->process(1);
@@ -156,7 +156,7 @@ inline void test_mult_prefixes() {
     p1.prefix = "1.2.0.0/16";
     p1.path = {1};
     p1.next = 1;
-    p1.relation = Relationship::ORIGIN;
+    p1.received_from_relationship = Relationship::ORIGIN;
 
     Announcement p2 = p1;
     p2.prefix = "2.3.0.0/16";
@@ -193,7 +193,7 @@ inline void test_propagation_simple() {
     ann.prefix = "1.2.0.0/16";
     ann.path = {3};
     ann.next = 3;
-    ann.relation = Relationship::ORIGIN;
+    ann.received_from_relationship = Relationship::ORIGIN;
 
     c->p->receive(ann);
     c->p->process(3);
@@ -232,7 +232,7 @@ inline void test_peer_single_hop() {
     ann.prefix = "1.2.0.0/16";
     ann.path = {1};
     ann.next = 1;
-    ann.relation = Relationship::ORIGIN;
+    ann.received_from_relationship = Relationship::ORIGIN;
 
     a->p->receive(ann);
     a->p->process(1);
@@ -265,13 +265,13 @@ inline void test_bgp_decision() {
     from_b.prefix = "1.2.0.0/16";
     from_b.path = {2};
     from_b.next = 2;
-    from_b.relation = Relationship::CUSTOMER;
+    from_b.received_from_relationship = Relationship::CUSTOMER;
 
     Announcement from_c;
     from_c.prefix = "1.2.0.0/16";
     from_c.path = {3};
     from_c.next = 3;
-    from_c.relation = Relationship::PEER;
+    from_c.received_from_relationship = Relationship::PEER;
 
     a->p->receive(from_c);
     a->p->receive(from_b);
@@ -309,7 +309,7 @@ inline void test_bgp_shortest_path() {
     ann.prefix = "1.2.0.0/16";
     ann.path = {4};
     ann.next = 4;
-    ann.relation = Relationship::ORIGIN;
+    ann.received_from_relationship = Relationship::ORIGIN;
 
     d->p->receive(ann);
     d->p->process(4);
@@ -340,13 +340,13 @@ inline void test_full_tiebreak() {
     from_b.prefix = "1.2.0.0/16";
     from_b.path = {2};
     from_b.next = 2;
-    from_b.relation = Relationship::CUSTOMER;
+    from_b.received_from_relationship = Relationship::CUSTOMER;
 
     Announcement from_c;
     from_c.prefix = "1.2.0.0/16";
     from_c.path = {3};
     from_c.next = 3;
-    from_c.relation = Relationship::CUSTOMER;
+    from_c.received_from_relationship = Relationship::CUSTOMER;
 
     a->p->receive(from_c);
     a->p->receive(from_b);
@@ -370,7 +370,7 @@ inline void test_rov() {
     bad.prefix = "1.2.0.0/16";
     bad.path = {2};
     bad.next = 2;
-    bad.relation = Relationship::CUSTOMER;
+    bad.received_from_relationship = Relationship::CUSTOMER;
     bad.rov_invalid = true;
 
     a->p->receive(bad);
@@ -397,7 +397,7 @@ inline void test_rov_mixed() {
     good.prefix = "1.2.0.0/16";
     good.path = {2};
     good.next = 2;
-    good.relation = Relationship::CUSTOMER;
+    good.received_from_relationship = Relationship::CUSTOMER;
     good.rov_invalid = false;
 
     Announcement bad = good;

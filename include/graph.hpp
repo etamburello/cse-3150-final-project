@@ -18,7 +18,7 @@ public:
 	void loadFile(const std::string& filename);
 	bool detectCycles();
 	void assignRanks();
-	void loadAnnouncement(const std::string& filename);
+	void seedAnnouncement(const std::string& filename);
 	void propagate();
 
 	void setROV(int asn);

@@ -3,7 +3,7 @@
 #include "rov.hpp"
 
 void ROV::receive(const Announcement& a) {
-	if (a.relation == Relationship::ORIGIN) {
+	if (a.received_from_relationship == Relationship::ORIGIN) {
 		BGP::receive(a);
 		return;
 	}

@@ -13,6 +13,6 @@ struct Announcement {
         std::string prefix;
         std::vector<int> path;
         int next;
-        Relationship relation;
+        Relationship received_from_relationship;
         bool rov_invalid = false;
 };

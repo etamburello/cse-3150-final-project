@@ -3,14 +3,14 @@
 #include "bgp.hpp"
 #include "announcement.hpp"
 
-int rPriority(Relationship relation) {
-	if (relation == Relationship::ORIGIN) {
+int rPriority(Relationship r) {
+	if (r == Relationship::ORIGIN) {
 			return 4;
 	}
-	else if (relation == Relationship::CUSTOMER) {
+	else if (r == Relationship::CUSTOMER) {
 			return 3;
 	}
-	else if (relation == Relationship::PEER) {
+	else if (r == Relationship::PEER) {
 			return 2;
 	}
 	else {
@@ -19,8 +19,8 @@ int rPriority(Relationship relation) {
 }
 
 bool BGP::better(const Announcement& a, const Announcement& b) {
-	int a_priority = rPriority(a.relation);
-	int b_priority = rPriority(b.relation);
+	int a_priority = rPriority(a.received_from_relationship);
+	int b_priority = rPriority(b.received_from_relationship);
 	if (a_priority != b_priority) {
 		return a_priority > b_priority;
 	}
@@ -42,7 +42,7 @@ bool BGP::process(int curr_asn) {
 		Announcement best;
 		bool found = false;
 		for (auto& a : ann) {
-			if(a.relation != Relationship::ORIGIN) {
+			if(a.received_from_relationship != Relationship::ORIGIN) {
 				if (std::find(a.path.begin(), a.path.end(), curr_asn) != a.path.end()) {
                     			continue;
                 		}
