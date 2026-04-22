@@ -1,6 +1,4 @@
 .DS_Store
-bench/
 program.out
-tests/
 output.csv
 test.out
