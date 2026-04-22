@@ -6,7 +6,7 @@ using std::cout, std::endl;
 int main(){
 	Graph g;
 	cout << "Loading in file..." << endl;
-	g.loadFile("dataset/20260301.as-rel2.txt");
+	g.loadFile("bench/prefix/CAIDAASGraphCollector_2025.10.15.txt ");
 
 	cout << "Checking for cycles..." << endl;
 	g.detectCycles();
