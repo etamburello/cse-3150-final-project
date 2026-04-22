@@ -8,11 +8,11 @@
 
 class Graph {
 private:
-	std::unordered_map<int, std::shared_ptr<AS>> map;
+	std::unordered_map<int, std::shared_ptr<AS>> map; //graph
 	bool dfsCycle(AS* node, std::unordered_map<int, int>& visited);
 
 public:
-	std::vector<std::vector<AS*>> ranks;
+	std::vector<std::vector<AS*>> ranks; // ranks[r] = ASes at that rank
 
 	std::shared_ptr<AS> make(int asn);
 	void loadFile(const std::string& filename);
@@ -26,4 +26,3 @@ public:
 
 	void writeCSV(const std::string& filename);
 };
-

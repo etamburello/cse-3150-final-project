@@ -1,4 +1,6 @@
+// Graph: topology IO, ranks, three-phase propagation, ROV install, CSV export
 #include <cstddef>
+#include <cctype>
 #include <iostream>
 #include <queue>
 #include <fstream>
@@ -52,6 +54,7 @@ void Graph::loadFile(const std::string& filename) {
 			auto second = make(b);
 
 			if (rel == -1) {
+				//first provides transit to second
 				first->customers.push_back(second.get());
 				second->providers.push_back(first.get());
 			}
@@ -60,6 +63,7 @@ void Graph::loadFile(const std::string& filename) {
 				second->peers.push_back(first.get());
 			}
 			else {
+				//rel == +1: first buys from second
 				first->providers.push_back(second.get());
     				second->customers.push_back(first.get());
 			}
@@ -138,7 +142,7 @@ void Graph::seedAnnouncement(const std::string& filename) {
 	}
 
 	std::string line;
-	std::getline(file, line);
+	std::getline(file, line); //for header
 	while(std::getline(file, line)) {
 		if (line.empty()) continue;
 		std::stringstream iss(line);
@@ -164,7 +168,7 @@ void Graph::seedAnnouncement(const std::string& filename) {
 
 void Graph::propagate() {
 	std::cout << "before up: nodes=" << map.size() << std::endl;
-	//up(to providers)
+	//up(customer/origin to providers)
 	for (size_t r = 0; r < ranks.size(); r++) {
 		for(auto as : ranks[r]) {
 			as->p->process(as->asn);
@@ -186,7 +190,7 @@ void Graph::propagate() {
 		std::cout << "after up: nodes=" << map.size() << std::endl;
 
 		std::cout << "before across: nodes=" << map.size() << std::endl;
-    	//across(to peers)
+    	//across(same to peers)
     	for(auto& [n, aptr] : map) {
         	for(auto& [prefix, ann] : aptr->p->getRib()) {
             		if(ann.received_from_relationship == Relationship::CUSTOMER || ann.received_from_relationship == Relationship::ORIGIN) {
@@ -205,13 +209,14 @@ void Graph::propagate() {
 	std::cout << "after across: nodes=" << map.size() << std::endl;
 
 	std::cout << "before down: nodes=" << map.size() << std::endl;
-    	//down(to customers)
+    	//down(all to customers)
     	for (int r = (int)ranks.size() - 1; r >= 0; r--) {
         	for (auto as : ranks[r]) {
             		as->p->process(as->asn);
        		}
        		for (auto as : ranks[r]) {
           		for (auto& [prefix, ann] : as->p->getRib()) {
+				//any route in RIB may be sent to customers; mark as learned from provider.
                 		for (auto cust : as->customers) {
                  			Announcement new_a = ann;
                     			new_a.next = as->asn;
@@ -224,6 +229,7 @@ void Graph::propagate() {
 	std::cout << "after down: nodes=" << map.size() << std::endl;
 }
 
+//replace BGP policy with ROV for this ASN (must exist in map)
 void Graph::setROV(int asn) {
 	if (!map.count(asn)) {
 		return;
@@ -271,4 +277,3 @@ void Graph::writeCSV(const std::string& filename) {
         	}
     	}
 }
-

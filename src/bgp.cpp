@@ -4,6 +4,7 @@
 #include "bgp.hpp"
 #include "announcement.hpp"
 
+//higher number = higher preference 
 int rPriority(Relationship r) {
 	if (r == Relationship::ORIGIN) {
 			return 4;
@@ -15,10 +16,11 @@ int rPriority(Relationship r) {
 			return 2;
 	}
 	else {
-		return 1;
+		return 1; //provider
 	}
 }
 
+//relationship first, then shorter AS path, then smaller next-hop ASN tie-break.
 bool BGP::better(const Announcement& a, const Announcement& b) {
 	int a_priority = rPriority(a.received_from_relationship);
 	int b_priority = rPriority(b.received_from_relationship);
@@ -33,6 +35,7 @@ bool BGP::better(const Announcement& a, const Announcement& b) {
 	return a.next < b.next;
 }
 
+//finds twin routes
 static bool sameAnnouncement(const Announcement& a, const Announcement& b) {
 	return a.prefix == b.prefix
 		&& a.path == b.path
@@ -56,6 +59,7 @@ bool BGP::process(int curr_asn) {
 			found = true;
 		}
 		for (auto& a : ann) {
+			//drop routes that would create a loop (AS already on path), except at origin.
 			if(a.received_from_relationship != Relationship::ORIGIN) {
 				if (std::find(a.path.begin(), a.path.end(), curr_asn) != a.path.end()) {
                     			continue;
@@ -73,6 +77,7 @@ bool BGP::process(int curr_asn) {
 		}
 		if(!found) continue;
 
+		//prepend this ASN to the AS path 
 		if(best.path.empty() || best.path[0] != curr_asn) {
 			best.path.insert(best.path.begin(), curr_asn);
 		}

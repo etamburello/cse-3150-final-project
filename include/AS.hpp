@@ -7,8 +7,8 @@ class AS {
 public:
 	int asn;
 
-	std::vector<AS*> providers;
-	std::vector<AS*> customers;
+	std::vector<AS*> providers;  //upstream
+	std::vector<AS*> customers; //downstream
 	std::vector<AS*> peers;
 
 	std::unique_ptr<Policy> p;
