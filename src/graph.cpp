@@ -180,7 +180,7 @@ void Graph::propagate() {
                    					new_a.next = as->asn;
                     				new_a.received_from_relationship = Relationship::CUSTOMER;
 									prov->p->receive(new_a);
-									
+
                     			}
                 		}
             		}
