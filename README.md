@@ -1,5 +1,5 @@
 # cse-3150-final-project-documentation(section 5)
-- organized project into separate classes AS, Graph, Policy, BGP, and ROV to keep things modular and easier to manage. they all handle the following:
+- organized project into separate classes to keep things modular and easier to manage. they all handle the following:
     - AS: one autonomous system node with provider/customer/peer neighbors
     - Graph: topology loading, cycle checks, rank assignment, route propagation, and CSV output
     - Announcement: simulator representation for “a candidate route to a prefix”
