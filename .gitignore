@@ -1,3 +1,4 @@
 .DS_Store
-bench/many/ribs.csv
+bench/
 program.out
+tests/
