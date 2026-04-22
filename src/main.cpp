@@ -6,16 +6,16 @@ using std::cout, std::endl;
 int main(){
 	Graph g;
 	cout << "Loading in file..." << endl;
-	g.loadFile("bench/prefix/CAIDAASGraphCollector_2025.10.15.txt");
+	g.loadFile("bench/many/CAIDAASGraphCollector_2025.10.15.txt");
 
 	cout << "Checking for cycles..." << endl;
 	g.detectCycles();
 
 	cout << "Loading ROV..." << endl;
-	g.loadROV("bench/prefix/rov_asns.csv");
+	g.loadROV("bench/many/rov_asns.csv");
 
 	cout << "Loading announcements..." << endl;
-	g.seedAnnouncement("bench/prefix/anns.csv");
+	g.seedAnnouncement("bench/many/anns.csv");
 
 	cout << "Assigning proper ranks..." << endl;
 	g.assignRanks();

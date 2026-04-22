@@ -167,7 +167,6 @@ void Graph::seedAnnouncement(const std::string& filename) {
 }
 
 void Graph::propagate() {
-	std::cout << "before up: nodes=" << map.size() << std::endl;
 	//up(customer/origin to providers)
 	for (size_t r = 0; r < ranks.size(); r++) {
 		for(auto as : ranks[r]) {
@@ -187,9 +186,7 @@ void Graph::propagate() {
             		}
         	}
        	}
-		std::cout << "after up: nodes=" << map.size() << std::endl;
 
-		std::cout << "before across: nodes=" << map.size() << std::endl;
     	//across(same to peers)
     	for(auto& [n, aptr] : map) {
         	for(auto& [prefix, ann] : aptr->p->getRib()) {
@@ -206,9 +203,7 @@ void Graph::propagate() {
 	for(auto& [n, aptr] : map) {
 		aptr->p->process(n);
 	}
-	std::cout << "after across: nodes=" << map.size() << std::endl;
 
-	std::cout << "before down: nodes=" << map.size() << std::endl;
     	//down(all to customers)
     	for (int r = (int)ranks.size() - 1; r >= 0; r--) {
         	for (auto as : ranks[r]) {
@@ -226,7 +221,6 @@ void Graph::propagate() {
             		}
         	}
     	}
-	std::cout << "after down: nodes=" << map.size() << std::endl;
 }
 
 //replace BGP policy with ROV for this ASN (must exist in map)
