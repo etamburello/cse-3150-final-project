@@ -1,4 +1,4 @@
-#cse-3150-final-project-documentation(section 5)
+# cse-3150-final-project-documentation(section 5)
 - organized project into separate classes AS, Graph, Policy, BGP, and ROV to keep things modular and easier to manage. they all handle the following:
     - AS: one autonomous system node with provider/customer/peer neighbors
     - Graph: topology loading, cycle checks, rank assignment, route propagation, and CSV output
@@ -17,6 +17,6 @@
     - using an unordered_map for AS and per-prefix RIB/receive-queue lookup
     - single-lookup insertion patterns to reduce duplicate hash probes
     - using a unique Policy pointer per AS for lightweight polymorphism
-    - using shared pointers in graph storage to keep table referencing if and when nodes are reused 
+    - using shared pointers in graph storage to keep table referencing if and when nodes are reused
     - batch processing with the receive queue to limit per-message recomputation
-    - compiler optimization with my Makefile 
+    - compiler optimization with my Makefile
